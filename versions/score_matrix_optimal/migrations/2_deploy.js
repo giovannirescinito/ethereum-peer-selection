@@ -12,15 +12,16 @@ var Token = artifacts.require("Token");
 
 module.exports = function (deployer) {
   deployer.deploy(Phases,{overwrite:true});
-  deployer.deploy(Scores,{overwrite:true});
   deployer.deploy(Utils, {overwrite: true});
   deployer.deploy(Zipper,{overwrite:true});
 
   deployer.link(Zipper, Allocations);
   deployer.link(Zipper, Proposals);
+  deployer.link(Zipper, Scores);
   
   deployer.deploy(Allocations, {overwrite: true});
   deployer.deploy(Proposals, {overwrite: true});
+  deployer.deploy(Scores,{overwrite:true});
   
   deployer.link(Allocations, ExactDollarPartition);
   deployer.link(Proposals, ExactDollarPartition);

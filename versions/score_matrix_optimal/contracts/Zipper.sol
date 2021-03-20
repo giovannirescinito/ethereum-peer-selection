@@ -128,6 +128,9 @@ library Zipper {
 
     function unzipArray(uint[] memory array, uint width)pure public checkWidth(width) returns (uint[] memory){
         uint size = array.length;
+        if (size == 0){
+            return new uint[](0);
+        }
         uint n = 256/width;
         uint index;
         uint[] memory last = unzipArrayWithSize(array[size-1],width);
@@ -196,6 +199,9 @@ library Zipper {
 
     function unzipDoubleArray(uint[] memory array)pure public returns (uint[] memory){
         uint size = array.length;
+        if (size == 0){
+            return new uint[](0);
+        }
         uint n = 256/32*2;
         uint index;
         uint[] memory last = unzipDoubleArrayWithSize(array[size-1]);

@@ -40,6 +40,7 @@ library Zipper {
             zipped += array[i-1];
             zipped = zipped << width;
         }
+        require(array[0] < (2**width), "Value exceeding 2^width");
         zipped += array[0];
         return zipped;
     }
@@ -117,7 +118,7 @@ library Zipper {
         return unzipped;
     }
     
-    function zipMatrix(uint[][] memory matrix, uint width) pure external checkWidth(width) returns (uint[][] memory){
+    function zipMatrix(uint[][] memory matrix, uint width) pure public checkWidth(width) returns (uint[][] memory){
         uint rows = matrix.length;
         uint[][] memory zipped = new uint[][](rows);
         for (uint i=0;i<rows;i++){
@@ -141,10 +142,9 @@ library Zipper {
         uint[][] memory scoreMatrix = new uint[][](n);
         for (uint i=0;i<n;i++){
             scoreMatrix[i] = new uint[](n);
-            uint len = scores[i].length/2;
-            for (uint j=0;j<len;j++){
-                uint index = j*2;
-                scoreMatrix[i][scores[i][index]] = scores[i][index+1];
+            uint len = scores[i].length;
+            for (uint j=0;j<len;j+=2){
+                scoreMatrix[i][scores[i][j]] = scores[i][j+1];
             }
         }
         return scoreMatrix;
