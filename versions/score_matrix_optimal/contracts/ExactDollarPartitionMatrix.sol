@@ -15,10 +15,11 @@ library ExactDollarPartitionMatrix {
 
     function finalizeScoreMatrix(uint[][] storage scoreMatrix, uint[][] storage partition) external{
         uint n = scoreMatrix.length;
-        uint[][] memory part = Zipper.unzipMatrix(partition,16);
+        uint[][] memory part = Zipper.unzipMatrix(partition,8);
         uint[] memory row = new uint[](0);
         bool modified;
-        uint[] memory array;
+        uint[] memory eval;
+        uint[] memory assign;
         uint[] memory tmp;
         for (uint i=0;i<part.length;i++){
             modified = false;
@@ -33,7 +34,8 @@ library ExactDollarPartitionMatrix {
                             }
                         }
                         tmp = row;
-                        array = new uint[](2*(n-part[i].length));
+                        eval = new uint[](n-part[i].length);
+                        assign = new uint[](n-part[i].length);
                         uint value = Utils.C/(n-part[i].length);
                         for (uint k=0;k<part[i].length;k++){
                             tmp[part[i][k]] = 0;
@@ -41,13 +43,13 @@ library ExactDollarPartitionMatrix {
                         uint idx = 0;
                         for (uint k=0;k<tmp.length;k++){
                             if (tmp[k] != 0){
-                                array[idx++] = k;
-                                array[idx++] = value;
+                                assign[idx] = k;
+                                eval[idx++] = value;
                             }
                         }    
                         modified = true;
                     }
-                    scoreMatrix[id] = Zipper.zipArray(array, 32);
+                    scoreMatrix[id] = Zipper.zipDoubleArray(assign, eval);
                 }
             }
             if (modified){
@@ -58,19 +60,16 @@ library ExactDollarPartitionMatrix {
         }
     }
     
-    function addToScoreMatrix(uint[][] storage scoreMatrix, uint index, uint[] calldata assignments, uint[] calldata evaluations) external{
+    function addToScoreMatrix(uint[][] storage scoreMatrix, uint index, uint[] calldata assignments, uint[] memory evaluations) external{
         uint sum = 0;
         for (uint j=0;j<assignments.length;j++){
             sum += evaluations[j];
         }
-        uint[] memory array = new uint[](2*assignments.length);
         if (sum != 0){
-            uint idx = 0;
             for (uint j=0;j<assignments.length;j++){
-                array[idx++] = assignments[j];
-                array[idx++] = evaluations[j]*Utils.C/sum;
+                evaluations[j] = evaluations[j]*Utils.C/sum;
             }
-            scoreMatrix[index] = Zipper.zipArray(array, 32);
+            scoreMatrix[index] = Zipper.zipDoubleArray(assignments, evaluations);
         }
     }
 
@@ -80,7 +79,7 @@ library ExactDollarPartitionMatrix {
                                     uint allocationRandomness,
                                     uint k) external {
         
-        uint[][] memory part = Zipper.unzipMatrix(partition,16);
+        uint[][] memory part = Zipper.unzipMatrix(partition,8);
         uint[][] memory scoreMat = Zipper.reconstructScoreMatrix(scoreMatrix);
         uint[] memory quotas = calculateQuotas(part, scoreMat, k);
         emit ExactDollarPartition.QuotasCalculated(quotas);

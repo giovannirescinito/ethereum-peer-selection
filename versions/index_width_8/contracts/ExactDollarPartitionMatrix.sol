@@ -28,8 +28,8 @@ library ExactDollarPartitionMatrix {
                     if (!modified){
                         if (row.length == 0){
                             row = new uint[](n);
-                            for (uint j=0;j<n;j++){
-                                row[j] = 1;
+                            for (uint k=0;k<n;k++){
+                                row[k] = 1;
                             }
                         }
                         tmp = row;
