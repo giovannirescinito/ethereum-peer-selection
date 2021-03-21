@@ -18,7 +18,7 @@ const Token = artifacts.require("Token");
 var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, map, params, paper;
 
 module.exports = async function (callback) {
-    paper = true
+    paper = false
     await initialize();
     if (paper) {
         k = 5;
