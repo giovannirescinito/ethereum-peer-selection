@@ -60,6 +60,7 @@ library ExactDollarPartitionMatrix {
     
     function addToScoreMatrix(uint[][] storage scoreMatrix, uint index, uint[] calldata assignments, uint[] calldata evaluations) external{
         uint sum = 0;
+        scoreMatrix[index] = new uint[](scoreMatrix.length);
         for (uint j=0;j<assignments.length;j++){
             sum += evaluations[j];
         }

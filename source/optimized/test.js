@@ -8,7 +8,6 @@ const ExactDollarPartitionMap = artifacts.require("ExactDollarPartitionMap");
 const ExactDollarPartitionMatrix = artifacts.require("ExactDollarPartitionMatrix");
 const Phases = artifacts.require("Phases");
 const Proposals = artifacts.require("Proposals");
-const Zipper = artifacts.require("Zipper");
 
 const ImpartialSelectionMatrix = artifacts.require("ImpartialSelectionMatrix");
 const ImpartialSelectionMap = artifacts.require("ImpartialSelectionMap");
@@ -18,21 +17,66 @@ const Token = artifacts.require("Token");
 var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, map, params, paper;
 
 module.exports = async function (callback) {
-    try {
-        await initialize();
-        l = 3
-        m = 3
-        n = 12
-        k = 4
+    paper = true
+    await initialize();
+    if (paper) {
+        k = 5;
+        n = 8;
+        l = 4;
+        m = 2;
+        offchain = true
+        revPerc = 1
+        map = false
+        file = "../../results/optimized/paper_matrix"
+        await main()
         map = true
-        offchain = false
-        paper = true
-        if (paper) {
-            k = 5;
-            n = 8;
-            l = 4;
-            m = 2;
+        file = "../../results/optimized/paper_map"
+        await main()
+    } else {
+        ls = [3, 4, 5]
+        ns = [10, 15, 20, 30, 50, 75]
+        ks = [5, 15, 25]
+        ms = [3, 7, 11, 15]
+        maps = [true, false]
+        offchains = [true, false]
+        revPercs = [0.75, 1]
+        for (i0 = 0; i0 < ls.length; i0++) {
+            l = ls[i0]
+            for (i1 = 0; i1 < ns.length; i1++) {
+                n = ns[i1]
+                for (i2 = 0; i2 < ks.length; i2++) {
+                    k = ks[i2]
+                    for (i3 = 0; i3 < ms.length; i3++) {
+                        m = ms[i3]
+                        for (i4 = 0; i4 < maps.length; i4++) {
+                            map = maps[i4]
+                            for (i5 = 0; i5 < offchains.length; i5++) {
+                                offchain = offchains[i5]
+                                for (i6 = 0; i6 < revPercs.length; i6++) {
+                                    revPerc = revPercs[i6]
+                                    if (checkConditions()) {
+                                        file = `../../results/optimized/l_${l}n_${n}k_${k}m_${m}map_${map}offchain_${offchain}revPerc_${revPerc}`
+                                        await main()
+                                    } else {
+                                        continue
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
+    }
+    callback()
+}
+
+function checkConditions() {
+    return ((n > m) && (n > k) && (n > (l * 1.5)))
+}
+
+async function main() {
+    try {
         await initializeVariables();
         await createNewContract();
         await submission()
@@ -43,18 +87,20 @@ module.exports = async function (callback) {
         await reveal()
         try {
             await selection()
+            params['Selection Completed'] = true
         } catch (error) {
             console.log("\n\n\nSELECTION FAILED!\n\n\n")
+            params['Selection Completed'] = false
         }
         gas['total'] = gasConsumption(gas)
         console.log("\nExperiment Parameters", params, "\n")
         console.log("Gas Consumption\n\n", gas)
-        results = { params, gas }
-        fs.writeFileSync('results/tmp', JSON.stringify(results));
-        callback()
     } catch (error) {
         console.error(error)
+        params['Selection Completed'] = false
     }
+    results = { params, gas }
+    fs.writeFileSync(file + ".json", JSON.stringify(results));
 }
 
 async function initialize() {
@@ -67,7 +113,6 @@ async function initialize() {
     var exact_matrix = await ExactDollarPartitionMatrix.deployed()
     var phases = await Phases.deployed()
     var prop = await Proposals.deployed()
-    var zip = await Zipper.deployed()
 
     await ImpartialSelectionMap.detectNetwork();
     await ImpartialSelectionMap.link("Allocations", all.address);
@@ -75,7 +120,6 @@ async function initialize() {
     await ImpartialSelectionMap.link("ExactDollarPartitionMap", exact_map.address);
     await ImpartialSelectionMap.link("Phases", phases.address);
     await ImpartialSelectionMap.link("Proposals", prop.address);
-    await ImpartialSelectionMap.link("Zipper", zip.address);
 
     await ImpartialSelectionMatrix.detectNetwork();
     await ImpartialSelectionMatrix.link("Allocations", all.address);
@@ -83,7 +127,6 @@ async function initialize() {
     await ImpartialSelectionMatrix.link("ExactDollarPartitionMatrix", exact_matrix.address);
     await ImpartialSelectionMatrix.link("Phases", phases.address);
     await ImpartialSelectionMatrix.link("Proposals", prop.address);
-    await ImpartialSelectionMatrix.link("Zipper", zip.address);
 }
 
 async function createNewContract() {
@@ -96,7 +139,7 @@ async function createNewContract() {
     deploy = await web3.eth.getTransactionReceipt(imp.transactionHash)
     gas['deployment'] = deploy.cumulativeGasUsed
     gas['finalization'] = finalize.receipt.gasUsed
-    console.log("Smart contract created at " + imp.address + "\n")
+    console.log("\n\nSmart contract created at " + imp.address + "\n")
 }
 
 async function initializeVariables() {
@@ -113,9 +156,12 @@ async function initializeVariables() {
     params['# of Proposals'] = n
     params['# of Reviews'] = m
     params['# of Winners'] = k
-    params['Index Width'] = 8
     params['Map Based'] = map
     params['Partition/Assignment Off-Chain'] = offchain
+    params['% of Correct Reveals'] = revPerc*100
+    params['Index Width'] = 256
+    params['Score Width'] = 256
+    params['Split Selection'] = false
 }
 
 async function submission() {
@@ -224,7 +270,7 @@ async function commit() {
 async function reveal() {
     console.log("\n\nReveal Phase")
     gas['reveal'] = {}
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < n*revPerc; i++) {
         let result = await imp.revealEvaluations(tokens[i], randomness[i], evaluations[i], { from: accounts[i % 10] })
         gas['reveal'][i] = result.receipt.gasUsed
         revLog = web3.eth.abi.decodeLog(['bytes32', 'uint256', 'uint256[]', 'uint256[]', 'uint256'],
@@ -244,15 +290,15 @@ async function reveal() {
 async function selection() {
     console.log("\n\nSelection Phase (Exact Dollar Partition)\n")
     var random = Math.floor(Math.random() * C)
-    var sel = await imp.impartialSelection(k,random,{from: accounts[0]});
+    var sel = await imp.impartialSelection(k, random, { from: accounts[0] });
     var scoreMatrix;
-    if (map){
+    if (map) {
         scoreMatrix = []
-    }else{
+    } else {
         scoreMatrix = await imp.getScoreMatrix.call()
     }
     let allocations = await imp.getAllocations.call()
-    logResultsMatrix(scoreMatrix,allocations,sel)
+    logResultsMatrix(scoreMatrix, allocations, sel)
     gas['selection'] = sel.receipt.gasUsed
     let endSel = await imp.endSelectionPhase({ from: accounts[0] })
     gas['endSelection'] = endSel.receipt.gasUsed
@@ -385,7 +431,6 @@ function generateAssignment(part) {
     }
     var assignment = [];
     var indices = new Array(l).fill(0);
-    console.log(indices)
     var index;
     for (var i = 0; i < n; i++) {
         var reviewerAssignment = new Array(m);
@@ -394,7 +439,6 @@ function generateAssignment(part) {
             reviewerAssignment[j] = part[index][indices[index]];
             indices[index] = (indices[index] + 1) % part[index].length;
         }
-        console.log(reviewerAssignment)
         assignment.push(reviewerAssignment);
     }
     return assignment;
