@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const fs = require('fs');
 const C = 1000000;
 
 const Allocations = artifacts.require("Allocations");
@@ -40,10 +41,16 @@ module.exports = async function(callback) {
         await evaluation()
         await commit()
         await reveal()
-        await selection()
+        try {
+            await selection()
+        } catch (error) {
+            console.log("\n\n\nSELECTION FAILED!\n\n\n")
+        }
         gas['total'] = gasConsumption(gas)  
         console.log("\nExperiment Parameters",params,"\n")
         console.log("Gas Consumption\n\n", gas)
+        results = { params, gas }
+        fs.writeFileSync('results/tmp', JSON.stringify(results));
         callback()                                   
     }catch(error){
         console.error(error)

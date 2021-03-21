@@ -37,9 +37,10 @@ library Scores{
     function extractPeersAndScores(uint[] memory array) pure private returns (uint[] memory, uint[] memory){
         uint[] memory peers = new uint[](array.length/2+1);
         uint[] memory scores = new uint[](array.length/2+1);
+        uint i = 0;
         for (uint j=0;j<array.length;j+=2){
-            peers[j] = array[j];
-            scores[j] = array[j+1];
+            peers[i] = array[j];
+            scores[i++] = array[j+1];
         }
         return (peers,scores);
     }

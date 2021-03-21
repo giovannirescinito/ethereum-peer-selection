@@ -44,10 +44,4 @@ library Scores{
     function reviewsReceived(ScoreMap storage map, uint reviewed) view public returns (Evaluation[] memory) {
         return map.reviewsFrom[reviewed].evaluations;
     }
-
-    function getScore(ScoreMap storage map, uint reviewer, uint reviewed) view external returns (uint){
-        uint keyIndex = map.reviewsTo[reviewer].indexes[reviewed];
-        require (keyIndex != 0, "Review not present");
-        return map.reviewsTo[reviewer].evaluations[keyIndex - 1].score;
-    }
 }
