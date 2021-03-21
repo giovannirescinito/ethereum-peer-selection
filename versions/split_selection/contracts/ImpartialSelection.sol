@@ -13,6 +13,8 @@ import "contracts/ImpartialSelectionInterface.sol";
 
 contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, AccessControl{
     uint[][] internal partition;
+    uint[] internal quotas;
+    uint[] internal selectedAllocation;
     uint8 internal currentPhase = 0;
     Allocations.Map internal allocations;  
     Proposals.Set internal proposals;    
@@ -75,11 +77,19 @@ contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, Acc
     }
 
     function getPartition() external view override returns(uint[][] memory){
-        return Zipper.unzipMatrix(partition,16);
+        return Zipper.unzipMatrix(partition,8);
     }
     
     function getAllocations() external view override returns (uint[][] memory, uint[] memory){
         return Allocations.getAllocations(allocations);
+    }
+
+    function getQuotas() external view override returns (uint[] memory){
+        return quotas;
+    }
+
+    function getSelectedAllocation() external view override returns (uint[] memory){
+        return selectedAllocation;
     }
 
     function getAssignmentByToken(uint tokenId) external view override returns(uint[] memory){
@@ -108,7 +118,7 @@ contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, Acc
 
     function providePartition(uint[][] calldata part) external override authorized(){
         Phases.checkPhase(Phases.Phase.Assignment);
-        partition = Zipper.zipMatrix(part,16);
+        partition = Zipper.zipMatrix(part,8);
     }
 
     function generateAssignments(uint m) external override authorized(){
@@ -144,8 +154,27 @@ contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, Acc
         return assignments;
     }
 
-    function impartialSelection(uint k, uint randomness) public virtual override authorized(){
+    function calculateQuotas(uint k) public virtual override authorized(){
         Phases.checkPhase(Phases.Phase.Selection);
+        require(quotas.length == 0, "Quotas already calculated");
         require(k <= Proposals.length(proposals), "More winners than participants");
+    }
+
+    function calculateAllocations() public override authorized(){
+        Phases.checkPhase(Phases.Phase.Selection);
+        require(Allocations.length(allocations) == 0, "Allocations already calculated");
+        require(quotas.length != 0, "Quotas not calculated");
+        ExactDollarPartition.randomizedAllocationFromQuotas(allocations,quotas);
+    }
+
+    function selectAllocation(uint randomness) public override authorized(){
+        Phases.checkPhase(Phases.Phase.Selection);
+        require(Allocations.length(allocations) != 0, "Allocations not calculated");
+        selectedAllocation = ExactDollarPartition.selectAllocation(allocations,randomness);
+    }
+
+    function selectWinners() public virtual override authorized(){
+        Phases.checkPhase(Phases.Phase.Selection);
+        require(selectedAllocation.length != 0, "Allocation not selected");
     }
 }

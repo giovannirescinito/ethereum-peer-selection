@@ -146,6 +146,7 @@ contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, Acc
     }
 
     function impartialSelection(uint k, uint randomness) public virtual override authorized(){
-        Phases.checkPhase(Phases.Phase.Selection);
+        Phases.checkPhase(Phases.Phase.Selection);        
+        require(k <= Proposals.length(proposals), "More winners than participants");
     }
 }

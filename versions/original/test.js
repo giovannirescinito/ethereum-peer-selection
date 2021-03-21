@@ -157,7 +157,7 @@ async function evaluation(){
             evaluations = [[0,100],[80,30],[83,42],[77,50],[65,65],[56,98],[29,62],[75,29]]
         }else{
             for (j=0;j<reviews.length;j++){
-                evaluations[i][j] = Math.floor(Math.random() * 100);
+                evaluations[i][j] = 50 + Math.floor(Math.random() * 50);
             }    
         }
         for (x=0;x<evaluations[i].length;x++){
@@ -222,7 +222,6 @@ async function selection(){
     console.log("\n\nSelection Phase (Exact Dollar Partition)\n")
     sm = await imp.constructScoreMatrix()
     gas['scoreMatrix'] = sm.receipt.gasUsed
-    // logMatrix(sm.logs[0].args[0],"Score Matrix")  
     sel = await imp.exactDollarPartition(k,true,{from: accounts[0]});
     logResults(sel)
     
