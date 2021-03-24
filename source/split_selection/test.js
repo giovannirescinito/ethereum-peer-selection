@@ -35,13 +35,13 @@ module.exports = async function (callback) {
         file = "../../results/split_selection/paper_map"
         await main()
     } else {
-        ls = [4]
-        ns = [16]
-        ks = [5]
-        ms = [5]
-        maps = [false]
-        offchains = [false]
-        revPercs = [1]
+        ls = [3, 4, 5]
+        ns = [10, 15, 20, 30, 50, 75]
+        ks = [5, 15, 25]
+        ms = [3, 7, 11, 15]
+        maps = [true, false]
+        offchains = [true, false]
+        revPercs = [0.75, 1]
         for (i0 = 0; i0 < ls.length; i0++) {
             l = ls[i0]
             for (i1 = 0; i1 < ns.length; i1++) {

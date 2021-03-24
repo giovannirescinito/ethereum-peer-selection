@@ -31,13 +31,13 @@ module.exports = async function (callback) {
         file = "../../results/index_width_8/paper_map"
         await main()
     } else {
-        ls = [4]
-        ns = [20,50]
-        ks = [5]
-        ms = [7,11]
+        ls = [3, 4, 5]
+        ns = [10, 15, 20, 30, 50, 75]
+        ks = [5, 15, 25]
+        ms = [3, 7, 11, 15]
         maps = [true]
         offchains = [true, false]
-        revPercs = [1]
+        revPercs = [0.75, 1]
         for (i0 = 0; i0 < ls.length; i0++) {
             l = ls[i0]
             for (i1 = 0; i1 < ns.length; i1++) {
@@ -74,7 +74,7 @@ module.exports = async function (callback) {
 }
 
 function checkConditions() {
-    return ((n > m) && (n > k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
+    return ((n > m) && (n >= 2*k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
 }
 
 async function main() {
