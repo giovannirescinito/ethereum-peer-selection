@@ -26,13 +26,13 @@ module.exports = async function (callback) {
         file = "../../results/original/paper_matrix"
         await main()
     } else {
-        ls = [3, 4, 5]
-        ns = [10, 15, 20, 30, 50, 75]
-        ks = [5, 15, 25]
-        ms = [3, 7, 11, 15]
+        ls = [4]
+        ns = [13,14]
+        ks = [5]
+        ms = [7,11]
         maps = [false]
         offchains = [true, false]
-        revPercs = [0.75, 1]
+        revPercs = [1]
         for (i0 = 0; i0 < ls.length; i0++) {
             l = ls[i0]
             for (i1 = 0; i1 < ns.length; i1++) {
@@ -48,7 +48,11 @@ module.exports = async function (callback) {
                                 for (i6 = 0; i6 < revPercs.length; i6++) {
                                     revPerc = revPercs[i6]
                                     if (checkConditions()) {
-                                        file = `../../results/original/l_${l}n_${n}k_${k}m_${m}map_${map}offchain_${offchain}revPerc_${revPerc}`
+                                        file = `../../results/original/l${l}_n${n}_k${k}_m${m}_map_${map}_offchain_${offchain}_rev_${revPerc}`
+                                        if (fs.existsSync(file+".json")) {
+                                            console.log("skipped")
+                                            continue
+                                        }
                                         await main()
                                     } else {
                                         continue
@@ -65,7 +69,7 @@ module.exports = async function (callback) {
 }
 
 function checkConditions() {
-    return ((n > m) && (n > k) && (n > (l * 1.5)))
+    return ((n > m) && (n > k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
 }
 
 async function main() {
@@ -169,7 +173,7 @@ async function partition() {
         if (offchain) {
             p = generatePartition()
             a = generateAssignment(p)
-            part = await imp.providePartition(p, { from: accounts[0] })
+            part = await imp.providePartitions(p, { from: accounts[0] })
             ass = await imp.provideAssignments(a, { from: accounts[0] })
         } else {
             part = await imp.createPartitions(l, { from: accounts[0] })
