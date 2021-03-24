@@ -78,7 +78,7 @@ module.exports = async function (callback) {
 }
 
 function checkConditions() {
-    return ((n > m) && (n > k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
+    return ((n > m) && (n > 2*k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
 }
 
 async function main() {
