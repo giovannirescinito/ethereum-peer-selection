@@ -37,7 +37,7 @@ contract ImpartialSelectionMatrix is ImpartialSelection{
         emit ExactDollarPartition.Winners(winners);
     }
     
-    function getScoreMatrix() external view returns (uint[][] memory){
+    function getScores() override external view returns (uint[][] memory){
         return Zipper.reconstructScoreMatrix(scoreMatrix);
     }
 }

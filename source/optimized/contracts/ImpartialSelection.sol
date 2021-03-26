@@ -73,6 +73,8 @@ contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, Acc
         Phases.endSelectionPhase();
     }
 
+    function getScores() external view override virtual returns(uint[][] memory){}
+
     function getPartition() external view override returns(uint[][] memory){
         return partition;
     }

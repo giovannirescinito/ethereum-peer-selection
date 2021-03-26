@@ -20,7 +20,7 @@ library Scores{
         map.reviewsTo[reviewer] = Zipper.zipArray(tmp,32);
         for(uint i=0;i<reviewed.length;i++){
             uint[] memory unzipped = Zipper.unzipArray(map.reviewsFrom[reviewed[i]],32);
-            (peers,scores) = extractPeersAndScores(unzipped);
+            (peers,scores) = extractPeersAndScores(unzipped,true);
             peers[peers.length-1] = reviewer;
             scores[scores.length-1] = evaluations[i];
             map.reviewsFrom[reviewed[i]] = Zipper.zipArray(compactArrays(peers,scores),32);
@@ -28,11 +28,11 @@ library Scores{
     }
 
     function reviewsSubmitted(ScoreMap storage map, uint reviewer) view public returns (uint[] memory, uint[] memory) {
-        return extractPeersAndScores(Zipper.unzipArray(map.reviewsTo[reviewer],32));
+        return extractPeersAndScores(Zipper.unzipArray(map.reviewsTo[reviewer],32),false);
     }
 
     function reviewsReceived(ScoreMap storage map, uint reviewed) view public returns (uint[] memory, uint[] memory) {
-        return extractPeersAndScores(Zipper.unzipArray(map.reviewsFrom[reviewed],32));
+        return extractPeersAndScores(Zipper.unzipArray(map.reviewsFrom[reviewed],32),false);
     }
 
     function compactArrays(uint[] memory a, uint[] memory b)pure private returns(uint[] memory){
@@ -46,9 +46,16 @@ library Scores{
         return tmp;
     }
 
-    function extractPeersAndScores(uint[] memory array) pure private returns (uint[] memory, uint[] memory){
-        uint[] memory peers = new uint[](array.length/2+1);
-        uint[] memory scores = new uint[](array.length/2+1);
+    function extractPeersAndScores(uint[] memory array, bool set) pure private returns (uint[] memory, uint[] memory){
+        uint[] memory peers;
+        uint[] memory scores;
+        if (set){
+            peers = new uint[](array.length/2+1);
+            scores = new uint[](array.length/2+1);
+        }else{
+            peers = new uint[](array.length/2);
+            scores = new uint[](array.length/2);
+        }
         uint i = 0;
         for (uint j=0;j<array.length;j+=2){
             peers[i] = array[j];

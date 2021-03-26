@@ -18,7 +18,9 @@ const Token = artifacts.require("Token");
 
 var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, map, params, paper;
 
+var folder = "../../results/split_selection/"
 module.exports = async function (callback) {
+    fs.mkdir(folder, { recursive: true },(err) =>{if (err) throw err;})
     paper = false
     await initialize();
     if (paper) {
@@ -29,10 +31,10 @@ module.exports = async function (callback) {
         offchain = true
         revPerc = 1
         map = false
-        file = "../../results/split_selection/paper_matrix"
+        file = folder + "paper_matrix"
         await main()
         map = true
-        file = "../../results/split_selection/paper_map"
+        file = folder + "paper_map"
         await main()
     } else {
         ls = [3, 4, 5]
@@ -57,11 +59,17 @@ module.exports = async function (callback) {
                                 for (i6 = 0; i6 < revPercs.length; i6++) {
                                     revPerc = revPercs[i6]
                                     if (checkConditions()) {
-                                        file = `../../results/split_selection/l${l}_n${n}_k${k}_m${m}_map_${map}_offchain_${offchain}_rev_${revPerc}`
-                                        if (fs.existsSync(file+".json")) {
-                                            console.log("skipped")
-                                            continue
-                                        }
+                                        file = folder + `l${l}_n${n}_k${k}_m${m}_map_${map}_offchain_${offchain}_rev_${revPerc}.json`
+                                        // if (fs.existsSync(file)) {
+                                        //     f = fs.readFileSync(file)
+                                        //     json = JSON.parse(f)
+                                        //     if (json['params']['Selection Completed']==false){
+                                        //         await main()
+                                        //     }else{
+                                        //         console.log("skipped")
+                                        //     }
+                                        //     continue
+                                        // }
                                         await main()
                                     } else {
                                         continue
@@ -78,7 +86,7 @@ module.exports = async function (callback) {
 }
 
 function checkConditions() {
-    return ((n > m) && (n > 2*k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
+    return ((n >= 2*k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
 }
 
 async function main() {
@@ -95,6 +103,7 @@ async function main() {
             await selection()
             params['Selection Completed'] = true
         } catch (error) {
+            console.error(error)
             console.log("\n\n\nSELECTION FAILED!\n\n\n")
             params['Selection Completed'] = false
         }
@@ -106,7 +115,7 @@ async function main() {
         params['Selection Completed'] = false
     }
     results = { params, gas }
-    fs.writeFileSync(file + ".json", JSON.stringify(results));
+    fs.writeFileSync(file, JSON.stringify(results));
 }
 
 async function initialize() {
@@ -310,15 +319,11 @@ async function selection() {
     gas['allocationSelected'] = selAll.receipt.gasUsed
     var winners = await imp.selectWinners();
     gas['winners'] = winners.receipt.gasUsed
-    if (map) {
-        scoreMatrix = [];
-    } else {
-        scoreMatrix = await imp.getScoreMatrix.call()
-    }
+    var scores = await imp.getScores.call()
     let allocations = await imp.getAllocations.call()
     let quot = await imp.getQuotas.call()
     let selected = await imp.getSelectedAllocation.call()
-    logResults(scoreMatrix, quot, allocations, selected, winners)
+    logResults(scores, quot, allocations, selected, winners)
     let endSel = await imp.endSelectionPhase({ from: accounts[0] })
     gas['endSelection'] = endSel.receipt.gasUsed
     console.log("\nCOMPLETED!")
@@ -352,9 +357,7 @@ function logResults(scoreMatrix, quotas, allocations, selected, winners) {
     for (i = 0; i < scoreMatrix.length; i++) {
         scoreMatrix[i] = scoreMatrix[i].map(function (item) { return item / C });
     }
-    if (scoreMatrix != []) {
-        logMatrix(scoreMatrix, "Score Matrix")
-    }
+    logMatrix(scoreMatrix, "Score Matrix")
     console.log("\nQuotas : [ " + quotas.map(function (item) { return item / C }) + " ]")
     logAllocations(allocations)
     console.log("\nSelected Allocation : [ " + selected + " ]")

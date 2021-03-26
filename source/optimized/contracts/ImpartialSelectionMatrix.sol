@@ -31,7 +31,7 @@ contract ImpartialSelectionMatrix is ImpartialSelection{
         ExactDollarPartitionMatrix.exactDollarPartition(partition, scoreMatrix, allocations, randomness, k);
     }
 
-    function getScoreMatrix() external view returns (uint[][] memory){
+    function getScores() override external view returns (uint[][] memory){
         return scoreMatrix;
     }
 }

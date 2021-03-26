@@ -26,4 +26,19 @@ contract ImpartialSelectionMap is ImpartialSelection{
         super.impartialSelection(k, randomness);
         ExactDollarPartitionMap.exactDollarPartition(partition, scoreMap, allocations, randomness, k, Proposals.getOptimalWidth(proposals));
     }
+
+    function getScores() view override external returns(uint[][] memory){
+        uint n = Proposals.length(proposals);
+        uint[][] memory map= new uint[][](n);
+        uint[] memory peers;
+        uint[] memory scores;
+        for (uint i=0;i<n;i++){
+            (peers,scores) = Scores.reviewsSubmitted(scoreMap,i);
+            map[i] = new uint[](n);
+            for (uint j=0;j<peers.length;j++){
+                map[i][peers[j]] = scores[j];
+            }
+        }
+        return map;
+    }
 }

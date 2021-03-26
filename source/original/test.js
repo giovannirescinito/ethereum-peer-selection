@@ -12,7 +12,9 @@ const Token = artifacts.require("Token");
 
 var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, map, params, paper;
 
+var folder = "../../results/original/"
 module.exports = async function (callback) {
+    fs.mkdir(folder, { recursive: true },(err) =>{if (err) throw err;})
     paper = false
     await initialize();
     if (paper) {
@@ -23,7 +25,7 @@ module.exports = async function (callback) {
         offchain = true
         revPerc = 1
         map = false
-        file = "../../results/original/paper_matrix"
+        file = folder + "paper_matrix"
         await main()
     } else {
         ls = [3, 4, 5]
@@ -48,11 +50,17 @@ module.exports = async function (callback) {
                                 for (i6 = 0; i6 < revPercs.length; i6++) {
                                     revPerc = revPercs[i6]
                                     if (checkConditions()) {
-                                        file = `../../results/original/l${l}_n${n}_k${k}_m${m}_map_${map}_offchain_${offchain}_rev_${revPerc}`
-                                        if (fs.existsSync(file+".json")) {
-                                            console.log("skipped")
-                                            continue
-                                        }
+                                        file = folder + `l${l}_n${n}_k${k}_m${m}_map_${map}_offchain_${offchain}_rev_${revPerc}.json`
+                                        // if (fs.existsSync(file)) {
+                                        //     f = fs.readFileSync(file)
+                                        //     json = JSON.parse(f)
+                                        //     if (json['params']['Selection Completed']==false){
+                                        //         await main()
+                                        //     }else{
+                                        //         console.log("skipped")
+                                        //     }
+                                        //     continue
+                                        // }
                                         await main()
                                     } else {
                                         continue
@@ -69,7 +77,7 @@ module.exports = async function (callback) {
 }
 
 function checkConditions() {
-    return ((n > m) && (n >= 2*k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
+    return ((n >= 2*k) && (n > (l * 1.5)) && (m<=(n*(l-1)/l)))
 }
 
 async function main() {
@@ -86,6 +94,7 @@ async function main() {
             await selection()
             params['Selection Completed'] = true
         } catch (error) {
+            console.error(error)
             console.log("\n\n\nSELECTION FAILED!\n\n\n")
             params['Selection Completed'] = false
         }
@@ -97,7 +106,7 @@ async function main() {
         params['Selection Completed'] = false
     }
     results = { params, gas }
-    fs.writeFileSync(file + ".json", JSON.stringify(results));
+    fs.writeFileSync(file, JSON.stringify(results));
 }
 
 async function initialize() {

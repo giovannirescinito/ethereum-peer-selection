@@ -18,6 +18,7 @@ interface ImpartialSelectionInterface{
     function endRevealPhase() external;
     function endSelectionPhase() external;
     
+    function getScores() external view returns(uint[][] memory);
     function getPartition() external view returns(uint[][] memory);
     function getAllocations() external view returns (uint[][] memory, uint[] memory);
     function getAssignmentByToken(uint tokenId) external view returns(uint[] memory);
