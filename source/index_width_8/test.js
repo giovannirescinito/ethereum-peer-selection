@@ -8,6 +8,7 @@ const ExactDollarPartitionMap = artifacts.require("ExactDollarPartitionMap");
 const ExactDollarPartitionMatrix = artifacts.require("ExactDollarPartitionMatrix");
 const Phases = artifacts.require("Phases");
 const Proposals = artifacts.require("Proposals");
+const Scores = artifacts.require("Scores");
 const Zipper = artifacts.require("Zipper");
 
 const ImpartialSelectionMatrix = artifacts.require("ImpartialSelectionMatrix");
@@ -124,6 +125,7 @@ async function initialize() {
     var exact_matrix = await ExactDollarPartitionMatrix.deployed()
     var phases = await Phases.deployed()
     var prop = await Proposals.deployed()
+    var scores = await Scores.deployed()
     var zip = await Zipper.deployed()
 
     await ImpartialSelectionMap.detectNetwork();
@@ -132,6 +134,7 @@ async function initialize() {
     await ImpartialSelectionMap.link("ExactDollarPartitionMap", exact_map.address);
     await ImpartialSelectionMap.link("Phases", phases.address);
     await ImpartialSelectionMap.link("Proposals", prop.address);
+    await ImpartialSelectionMap.link("Scores", scores.address);
     await ImpartialSelectionMap.link("Zipper", zip.address);
 
     await ImpartialSelectionMatrix.detectNetwork();

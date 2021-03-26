@@ -33,10 +33,10 @@ contract ImpartialSelectionMap is ImpartialSelection{
         uint[] memory peers;
         uint[] memory scores;
         for (uint i=0;i<n;i++){
-            (peers,scores) = Scores.reviewsSubmitted(scoreMap,i);
+            Scores.Evaluation[] memory scores = Scores.reviewsSubmitted(scoreMap,i);
             map[i] = new uint[](n);
-            for (uint j=0;j<peers.length;j++){
-                map[i][peers[j]] = scores[j];
+            for (uint j=0;j<scores.length;j++){
+                map[i][scores[j].peer] = scores[j].score;
             }
         }
         return map;
