@@ -11,7 +11,7 @@ import "contracts/Zipper.sol";
 import "contracts/Token.sol";
 import "contracts/ImpartialSelectionInterface.sol";
 
-contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, AccessControl{
+abstract contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, AccessControl{
     uint[][] internal partition;
     uint[] internal quotas;
     uint[] internal selectedAllocation;
@@ -75,8 +75,6 @@ contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, Acc
     function endSelectionPhase() external override authorized(){
         Phases.endSelectionPhase();
     }
-
-    function getScores() external view override virtual returns(uint[][] memory){}
 
     function getPartition() external view override returns(uint[][] memory){
         return Zipper.unzipMatrix(partition,8);

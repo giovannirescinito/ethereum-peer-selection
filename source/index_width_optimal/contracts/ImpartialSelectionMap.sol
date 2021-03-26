@@ -30,8 +30,6 @@ contract ImpartialSelectionMap is ImpartialSelection{
     function getScores() view override external returns(uint[][] memory){
         uint n = Proposals.length(proposals);
         uint[][] memory map= new uint[][](n);
-        uint[] memory peers;
-        uint[] memory scores;
         for (uint i=0;i<n;i++){
             Scores.Evaluation[] memory scores = Scores.reviewsSubmitted(scoreMap,i);
             map[i] = new uint[](n);

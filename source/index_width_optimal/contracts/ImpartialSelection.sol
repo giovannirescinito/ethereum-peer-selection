@@ -11,7 +11,7 @@ import "contracts/Zipper.sol";
 import "contracts/Token.sol";
 import "contracts/ImpartialSelectionInterface.sol";
 
-contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, AccessControl{
+abstract contract ImpartialSelection is IERC721Receiver, ImpartialSelectionInterface, AccessControl{
     uint[][] internal partition;
     uint8 internal currentPhase = 0;
     Allocations.Map internal allocations;  
