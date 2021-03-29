@@ -18,7 +18,7 @@ const ImpartialSelectionNoStorage = artifacts.require("ImpartialSelectionNoStora
 
 const Token = artifacts.require("Token");
 
-var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, map, params, paper;
+var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, map, params, paper,scoresNoStorage;
 
 var folder = "../../results/accumulator_split/"
 module.exports = async function (callback) {
@@ -180,6 +180,7 @@ async function createNewContract() {
 
 async function initializeVariables() {
     randomness = new Uint32Array(n);
+    scoresNoStorage = [];
     messages = [];
     commitments = [];
     assignments = [];
@@ -318,6 +319,20 @@ async function reveal() {
             "\n\t\tAssignments: " + revLog[2] +
             "\n\t\tEvaluations: " + revLog[3] +
             "\n\t\tToken: " + revLog[4]);
+        if (map == 'noStorage'){
+            var line = new Array(n).fill(0);
+            var sum = 0;
+            for (j = 0;j<revLog[3].length;j++){
+                sum += Number(revLog[3][j])
+            }
+            console.log(revLog[3])
+            console.log(sum)
+            for (j = 0;j<revLog[2].length;j++){
+                line[revLog[2][j]] = (revLog[3][j]*C/sum).toPrecision(6);
+            }
+            console.log(line)
+            scoresNoStorage.push(line);
+        }
     }
     let endRev = await imp.endRevealPhase({ from: accounts[0] })
     gas['endReveal'] = endRev.receipt.gasUsed
@@ -337,6 +352,26 @@ async function selection() {
     var scores = []
     if (map != 'noStorage'){
         scores = await imp.getScores.call()
+    }else{
+        scores = scoresNoStorage;
+        p = await imp.getPartition.call()
+        for (i=scores.length;i<n;i++){
+            var line = new Array(n).fill(0);
+            for (j=0;j<l;j++){
+                index = p[j].map(x => x.toNumber()).indexOf(i)
+                if (index != -1){
+                    value = (C/(n-p[j].length)).toPrecision(6)
+                    for (k=0;k<l;k++){
+                        if (k!=j){
+                            for (x=0;x<p[k].length;x++){
+                                line[p[k][x]] = value
+                            }
+                        }
+                    }
+                }
+            }
+            scores.push(line)
+        }
     }
     let allocations = await imp.getAllocations.call()
     let quot = await imp.getQuotas.call()
