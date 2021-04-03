@@ -325,12 +325,9 @@ async function reveal() {
             for (j = 0;j<revLog[3].length;j++){
                 sum += Number(revLog[3][j])
             }
-            console.log(revLog[3])
-            console.log(sum)
             for (j = 0;j<revLog[2].length;j++){
                 line[revLog[2][j]] = (revLog[3][j]*C/sum).toPrecision(6);
             }
-            console.log(line)
             scoresNoStorage.push(line);
         }
     }
