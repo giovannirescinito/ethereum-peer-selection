@@ -16,12 +16,12 @@ const ImpartialSelectionMap = artifacts.require("ImpartialSelectionMap");
 
 const Token = artifacts.require("Token");
 
-var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, map, params, paper;
+var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, score, params, paper;
 
-var folder = "../../results/index_width_8/"
+var folder = "../../results/IW8-SW256/"
 module.exports = async function (callback) {
     fs.mkdir(folder, { recursive: true },(err) =>{if (err) throw err;})
-    paper = false
+    paper = true
     await initialize();
     if (paper) {
         k = 5;
@@ -30,15 +30,15 @@ module.exports = async function (callback) {
         m = 2;
         offchain = true
         revPerc = 1
-        map = true
-        file = folder + "paper_map"
+        score = 'MAP'
+        file = folder + "paper_map.json"
         await main()
     } else {
         ls = [3, 4, 5]
         ns = [10, 15, 20, 30, 50, 75]
         ks = [5, 15, 25]
         ms = [3, 7, 11, 15]
-        maps = [true]
+        scs = ['MAP']
         offchains = [true, false]
         revPercs = [0.75, 1]
         for (i0 = 0; i0 < ls.length; i0++) {
@@ -49,14 +49,14 @@ module.exports = async function (callback) {
                     k = ks[i2]
                     for (i3 = 0; i3 < ms.length; i3++) {
                         m = ms[i3]
-                        for (i4 = 0; i4 < maps.length; i4++) {
-                            map = maps[i4]
+                        for (i4 = 0; i4 < scs.length; i4++) {
+                            score = scs[i4]
                             for (i5 = 0; i5 < offchains.length; i5++) {
                                 offchain = offchains[i5]
                                 for (i6 = 0; i6 < revPercs.length; i6++) {
                                     revPerc = revPercs[i6]
                                     if (checkConditions()) {
-                                        file = folder + `l${l}_n${n}_k${k}_m${m}_map_${map}_offchain_${offchain}_rev_${revPerc}.json`
+                                        file = folder + `l${l}_n${n}_m${m}_k${k}_scores_${score}_offChain_${offchain}_revPerc_${revPerc}.json`
                                         // if (fs.existsSync(file)) {
                                         //     f = fs.readFileSync(file)
                                         //     json = JSON.parse(f)
@@ -147,9 +147,9 @@ async function initialize() {
 }
 
 async function createNewContract() {
-    if (map) {
+    if (score == 'MAP') {
         imp = await ImpartialSelectionMap.new(token.address, { from: accounts[0] })
-    } else {
+    } else if (score == 'MATRIX') {
         imp = await ImpartialSelectionMatrix.new(token.address, { from: accounts[0] })
     }
     finalize = await imp.finalizeCreation();
@@ -169,16 +169,17 @@ async function initializeVariables() {
     tokens = [];
     gas = {};
     params = {};
-    params['# of Clusters'] = l;
-    params['# of Proposals'] = n
-    params['# of Reviews'] = m
-    params['# of Winners'] = k
-    params['Map Based'] = map
-    params['Partition/Assignment Off-Chain'] = offchain
-    params['% of Correct Reveals'] = revPerc * 100
-    params['Index Width'] = 8
-    params['Score Width'] = 256
-    params['Split Selection'] = false
+    params['l'] = l;
+    params['n'] = n
+    params['m'] = m
+    params['k'] = k
+    params['scores'] = score
+    params['offChain'] = offchain
+    params['revPerc'] = revPerc
+    params['IW'] = 8
+    params['SW'] = 256
+    params['accumulator'] = false
+    params['split'] = false
 }
 
 async function submission() {
@@ -287,7 +288,7 @@ async function commit() {
 async function reveal() {
     console.log("\n\nReveal Phase")
     gas['reveal'] = {}
-    for (i = 0; i < n * revPerc; i++) {
+    for (i = 0; i < n*revPerc; i++) {
         let result = await imp.revealEvaluations(tokens[i], randomness[i], evaluations[i], { from: accounts[i % 10] })
         gas['reveal'][i] = result.receipt.gasUsed
         revLog = web3.eth.abi.decodeLog(['bytes32', 'uint256', 'uint256[]', 'uint256[]', 'uint256'],
@@ -352,7 +353,6 @@ function logResults(scoreMatrix, allocations, sel) {
     allLog = web3.eth.abi.decodeLog(['uint256[]'], logs[1].data, logs[1].topics);
     console.log("\nSelected Allocation : [ " + allLog[0] + " ]")
     logWinners(logs[2])
-
 }
 
 function logAllocations(result) {
@@ -372,6 +372,7 @@ function logWinners(result) {
 }
 
 function logMatrix(result, message) {
+    if (result.length == 0){return}
     var i;
     console.log(`\n${message}\n`);
     for (i = 0; i < result.length; i++) {

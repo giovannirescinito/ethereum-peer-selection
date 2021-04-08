@@ -18,12 +18,12 @@ const ImpartialSelectionNoStorage = artifacts.require("ImpartialSelectionNoStora
 
 const Token = artifacts.require("Token");
 
-var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, map, params, paper,scoresNoStorage;
+var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, tokens, imp, token, accounts, gas, score, params, paper,scoresNoStorage;
 
-var folder = "../../results/final_no_split/"
+var folder = "../../results/FNS/"
 module.exports = async function (callback) {
     fs.mkdir(folder, { recursive: true },(err) =>{if (err) throw err;})
-    paper = false
+    paper = true
     await initialize();
     if (paper) {
         k = 5;
@@ -32,13 +32,13 @@ module.exports = async function (callback) {
         m = 2;
         offchain = true
         revPerc = 1
-        map = false
+        score = 'MATRIX'
         file = folder + "paper_matrix.json"
         await main()
-        map = true
+        score = 'MAP'
         file = folder + "paper_map.json"
         await main()
-        map = 'noStorage'
+        score = 'NOSTORAGE'
         file = folder + "paper_nostorage.json"
         await main()
     } else {
@@ -46,7 +46,7 @@ module.exports = async function (callback) {
         ns = [10, 15, 20, 30, 50, 75]
         ks = [5, 15, 25]
         ms = [3, 7, 11, 15]
-        maps = [true, false]
+        scs = ['MAP', 'MATRIX','NOSTORAGE']
         offchains = [true, false]
         revPercs = [0.75, 1]
         for (i0 = 0; i0 < ls.length; i0++) {
@@ -57,14 +57,14 @@ module.exports = async function (callback) {
                     k = ks[i2]
                     for (i3 = 0; i3 < ms.length; i3++) {
                         m = ms[i3]
-                        for (i4 = 0; i4 < maps.length; i4++) {
-                            map = maps[i4]
+                        for (i4 = 0; i4 < scs.length; i4++) {
+                            score = scs[i4]
                             for (i5 = 0; i5 < offchains.length; i5++) {
                                 offchain = offchains[i5]
                                 for (i6 = 0; i6 < revPercs.length; i6++) {
                                     revPerc = revPercs[i6]
                                     if (checkConditions()) {
-                                        file = folder + `l${l}_n${n}_k${k}_m${m}_map_${map}_offchain_${offchain}_rev_${revPerc}.json`
+                                        file = folder + `l${l}_n${n}_m${m}_k${k}_scores_${score}_offChain_${offchain}_revPerc_${revPerc}.json`
                                         // if (fs.existsSync(file)) {
                                         //     f = fs.readFileSync(file)
                                         //     json = JSON.parse(f)
@@ -164,11 +164,11 @@ async function initialize() {
 }
 
 async function createNewContract() {
-    if (map == true) {
+    if (score == 'MAP') {
         imp = await ImpartialSelectionMap.new(token.address, { from: accounts[0] })
-    } else if (map == false) {
+    } else if (score == 'MATRIX') {
         imp = await ImpartialSelectionMatrix.new(token.address, { from: accounts[0] })
-    }else if (map == 'noStorage'){
+    }else if (score == 'NOSTORAGE'){
         imp = await ImpartialSelectionNoStorage.new(token.address, { from: accounts[0] })
     }
     finalize = await imp.finalizeCreation();
@@ -189,16 +189,21 @@ async function initializeVariables() {
     tokens = [];
     gas = {};
     params = {};
-    params['# of Clusters'] = l;
-    params['# of Proposals'] = n
-    params['# of Reviews'] = m
-    params['# of Winners'] = k
-    params['Map Based'] = map
-    params['Partition/Assignment Off-Chain'] = offchain
-    params['% of Correct Reveals'] = revPerc*100
-    params['Index Width'] = 'optimal'
-    params['Score Width'] = 'optimal'
-    params['Split Selection'] = false
+    params['l'] = l;
+    params['n'] = n
+    params['m'] = m
+    params['k'] = k
+    params['scores'] = score
+    params['offChain'] = offchain
+    params['revPerc'] = revPerc
+    params['IW'] = 16
+    if (score == 'NOSTORAGE'){
+        params['SW'] = 0
+    }else{
+        params['SW'] = 32
+    }
+    params['accumulator'] = true
+    params['split'] = false
 }
 
 async function submission() {
@@ -319,7 +324,7 @@ async function reveal() {
             "\n\t\tAssignments: " + revLog[2] +
             "\n\t\tEvaluations: " + revLog[3] +
             "\n\t\tToken: " + revLog[4]);
-        if (map == 'noStorage'){
+        if (score == 'NOSTORAGE'){
             var line = new Array(n).fill(0);
             var sum = 0;
             for (j = 0;j<revLog[3].length;j++){
@@ -340,7 +345,7 @@ async function selection() {
     var random = Math.floor(Math.random() * C)
     var sel = await imp.impartialSelection(k, random, { from: accounts[0] });
     var scores = []
-    if (map != 'noStorage'){
+    if (score != 'NOSTORAGE'){
         scores = await imp.getScores.call()
     }else{
         scores = scoresNoStorage;
@@ -351,10 +356,10 @@ async function selection() {
                 index = p[j].map(x => x.toNumber()).indexOf(i)
                 if (index != -1){
                     value = (C/(n-p[j].length)).toPrecision(6)
-                    for (k=0;k<l;k++){
-                        if (k!=j){
-                            for (x=0;x<p[k].length;x++){
-                                line[p[k][x]] = value
+                    for (y=0;y<l;y++){
+                        if (y!=j){
+                            for (x=0;x<p[y].length;x++){
+                                line[p[y][x]] = value
                             }
                         }
                     }

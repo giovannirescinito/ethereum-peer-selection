@@ -59,8 +59,8 @@ for folder in os.listdir("results"):
             data = json.load(f)
             gas[file] = data['gas']
             params[file] = data['params']
-            if (data['params']['# of Proposals']>n):
-                n = data['params']['# of Proposals']    
+            if (data['params']['n']>n):
+                n = data['params']['n']    
             if (len(data['gas'].keys())>n_gas):
                 n_gas = len(data['gas'].keys())
                 par_list = list(data['params'].keys())
@@ -71,9 +71,10 @@ for folder in os.listdir("results"):
     title1 = "Parameters"
     title2 = "Gas Consumption Recap"
     title3 = "Gas Consumption Detail"
+    title4 = "Implementation"
 
     sheet.write(0, 0, title1)
-    lengths[0] = len(title1)
+    sheet.write(0, 7, title4)
     
     index = 0
     for p in par_list:
@@ -83,36 +84,37 @@ for folder in os.listdir("results"):
         sheet.write(2, index, p)
         index+=1
 
-    index+=2
+    index+=1
     sheet.write(0, index, title2)
     lengths[index] = len(title2)
-    index+=1
     agg_res_start = index
     
     users_str = ['User #1', 'User #n', 'Average']
     for i in aggregated_results:
-        sheet.write(1, index, i)
+        sheet.write(2, index, i)
         lengths[index] = max(lengths[index],len(str(i)))
         if re.search('per user',i) is not None:
+            sheet.write(1, index, i)
             for ii in range(3):
                 lengths[index] = max(lengths[index],len(str(users_str[ii])))
                 sheet.write(2, index, users_str[ii])
                 index+=1
         else:
             index+=1
-    index+=2
+    index+=1
     gas_start = index
-    sheet.write(0,gas_start-1 , title3)
-    lengths[gas_start-1] = len(title3)
+    sheet.write(0,gas_start , title3)
+    lengths[gas_start] = len(title3)
 
     for g in gas_list:
         if g == 'total':
             continue
-        sheet.write(1,index,g)
+        sheet.write(2,index,g)
         if g not in multiple_values:
             lengths[index] = max(lengths[index],len(str(g)))
             index+=1
         else:
+            sheet.write(1,index,g)
             for i in range(n):
                 sheet.write(2,index+i,i)
             index+=n
@@ -154,11 +156,14 @@ for folder in os.listdir("results"):
                 col+=n-len(g_v)
 
         sel_col = agg_res_start
-        # Total Cost
-        sheet.write_formula(row,sel_col,'=SUM({0}:{1})'.format(xl_rowcol_to_cell(row,gas_start),xl_rowcol_to_cell(row,col-1)))
-        sel_col+=1
-        # Total algorithm cost
-        sel_col = list_to_cells('algorithm',row,sel_col,indexes,sheet)
+        if params[f]['Selection Completed']:
+            # Total Cost
+            sheet.write_formula(row,sel_col,'=SUM({0}:{1})'.format(xl_rowcol_to_cell(row,gas_start),xl_rowcol_to_cell(row,col-1)))
+            sel_col+=1
+            # Total algorithm cost
+            sel_col = list_to_cells('algorithm',row,sel_col,indexes,sheet)
+        else:
+            sel_col+=2
         # Total deployment cost
         sel_col = list_to_cells('deployment',row,sel_col,indexes,sheet)
         # Partitioning/Assignment cost
@@ -183,7 +188,7 @@ for folder in os.listdir("results"):
 
         
     for i in range(num_cols):
-        sheet.set_column(i,i,lengths[i])
+        sheet.set_column(i,i,lengths[i]+3)
 
     format1 = workbook.add_format({'bg_color':'#008000'})
     format2 = workbook.add_format({'bg_color':'#FF0000'})
