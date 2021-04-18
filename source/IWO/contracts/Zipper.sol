@@ -1,16 +1,23 @@
-// SPDX-License-Identifier: UNLICENSED
-
+// SPDX-License-Identifier: MIT
 
 pragma solidity >=0.4.18;
 pragma experimental ABIEncoderV2;
 
+/// @title Data zipping functions
+/// @author Giovanni Rescinito
+/// @notice implements the zipping operations used to compress lists of values in a single data location
 library Zipper {    
+    /// @notice checks that the width proposed is compatible with the zipping operations
+    /// @param width the value to check
     modifier checkWidth(uint width){
         require((width == 4) || (width == 8) || (width == 16) || (width == 32) || (width == 64) || (width == 128),
                  "Width unsupported");
         _;
     }
 
+    /// @notice calculates the optimal width required to store a certain value
+    /// @param len the maximum value to store
+    /// @return the optimal number of bits used to zip the data structure containing that value
     function optimalWidth(uint len)pure external returns (uint){
         uint width;
         if (len <= 16){
@@ -29,6 +36,10 @@ library Zipper {
         return width;
     }
 
+    /// @notice zips an array of values to a single data location
+    /// @param array the array to zip
+    /// @param width the number of bits used for each value
+    /// @return the zipped version of the array
     function zip(uint[] memory array, uint width) pure private returns (uint){
         uint zipped = 0;
         uint size = array.length;
@@ -45,6 +56,11 @@ library Zipper {
         return zipped;
     }
 
+    /// @notice unzips a zipped value to the corresponding array of values
+    /// @param zipped the zipped value
+    /// @param width the number of bits used for each value
+    /// @param size the number of values to extract
+    /// @return the array of the unzipped values
     function unzip(uint zipped, uint width, uint size) pure private returns (uint[] memory){
         uint[] memory array = new uint[](size);
         for (uint i=0;i<size;i++){
@@ -54,6 +70,10 @@ library Zipper {
         return array;
     }
 
+    /// @notice zips an array of values using two different widths in an alternate manner, including the size at the end
+    /// @param array the values to zip
+    /// @param width the number of bits used for each value
+    /// @return the zipped version of the array
     function zipArrayWithSize(uint[] memory array, uint width) pure public checkWidth(width) returns (uint){
         uint size = array.length;
         require(size<=(256/width - 1), "Too many values");
@@ -63,12 +83,20 @@ library Zipper {
         return zipped;
     }
 
+    /// @notice unzips a value, after extracting the size, to the corresponding array of values 
+    /// @param zipped the zipped value
+    /// @param width the number of bits used for each value
+    /// @return the array of the unzipped values
     function unzipArrayWithSize(uint zipped, uint width) pure public checkWidth(width) returns (uint[] memory){
         uint size = zipped % (2**width);
         zipped = zipped >> width;
         return unzip(zipped,width,size);
     }
 
+    /// @notice zips an arbitrary length array of values
+    /// @param array the values to zip
+    /// @param width the number of bits used for each value
+    /// @return an array containing all the zipped values required to zip the starting array
     function zipArray(uint[] memory array, uint width) pure public checkWidth(width) returns (uint[] memory){
         uint n = 256/width;
         uint cols = array.length;
@@ -96,6 +124,10 @@ library Zipper {
         return zipped;
     }
 
+    /// @notice unzips an array of zipped values
+    /// @param array the values to unzip
+    /// @param width the number of bits used for each value
+    /// @return an array containing all the values obtained after unzipping each of the values of the provided array
     function unzipArray(uint[] memory array, uint width)pure public checkWidth(width) returns (uint[] memory){
         uint size = array.length;
         if (size == 0){
@@ -121,6 +153,10 @@ library Zipper {
         return unzipped;
     }
     
+    /// @notice zips a matrix of values, row by row
+    /// @param matrix the matrix of values to zip
+    /// @param width the number of bits used for each value
+    /// @return a zipped matrix, where each row is a zipped array containing all the values of that row zipped
     function zipMatrix(uint[][] memory matrix, uint width) pure public checkWidth(width) returns (uint[][] memory){
         uint rows = matrix.length;
         uint[][] memory zipped = new uint[][](rows);
@@ -130,6 +166,10 @@ library Zipper {
         return zipped;
     }
 
+    /// @notice unzips a matrix of values, row by row
+    /// @param matrix the matrix of values to unzip
+    /// @param width the number of bits used for each value
+    /// @return a matrix, where each row contains all the values obtained after unzipping that row
     function unzipMatrix(uint[][] memory matrix, uint width)pure public checkWidth(width) returns (uint[][] memory){
         uint rows = matrix.length;
         uint[][] memory unzipped = new uint[][](rows);
@@ -139,6 +179,9 @@ library Zipper {
         return unzipped;
     }
 
+    /// @notice unzips the zipped score matrix and reconstructs the nxn starting matrix
+    /// @param scoreMat the zipped score matrix
+    /// @return the unzipped nxn score matrix
     function reconstructScoreMatrix(uint[][] memory scoreMat) pure public returns (uint[][] memory){
         uint[][] memory scores = unzipMatrix(scoreMat,32);
         uint n = scores.length;

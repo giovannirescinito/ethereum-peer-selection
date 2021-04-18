@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-
+// SPDX-License-Identifier: MIT
 
 pragma solidity >=0.4.18;
 pragma experimental ABIEncoderV2;
@@ -7,8 +6,15 @@ pragma experimental ABIEncoderV2;
 
 import "contracts/ExactDollarPartition.sol";
 
+/// @title Exact Dollar Partition noStorage implementation
+/// @author Giovanni Rescinito
+/// @notice implements specific functions related to Exact Dollar Partition implementation using no data structures for scores
 library ExactDollarPartitionNoStorage {
 
+    /// @notice checks if all users revealed their evaluations, otherwise sets them according to Exact Dollar Partition
+    /// @param revealed containing information about users who already revealed scores
+    /// @param partition zipped matrix of the clusters in which proposals are divided
+    /// @param scoreAccumulated accumulators containing the cumulative score received by each user
     function finalizeScores(mapping(uint=>bool) storage revealed, uint[][] storage partition, mapping(uint=>uint) storage scoreAccumulated) external{
         uint[][] memory part = Zipper.unzipMatrix(partition,8);
         uint n = 0;
@@ -42,6 +48,12 @@ library ExactDollarPartitionNoStorage {
         }
     }
     
+    /// @notice normalizes the scores received by a user when revealing and adds them to the corresponding data structure
+    /// @param revealed containing information about users who already revealed scores
+    /// @param scoreAccumulated accumulators containing the cumulative score received by each user
+    /// @param index index of the agent who submitted the reviews
+    /// @param assignments list of the works reviewed
+    /// @param evaluations scores provided
     function addScores(mapping(uint=>bool) storage revealed, mapping(uint=>uint) storage scoreAccumulated, uint index, uint[] calldata assignments, uint[] memory evaluations) external{
         uint sum = 0;
         for (uint j=0;j<assignments.length;j++){

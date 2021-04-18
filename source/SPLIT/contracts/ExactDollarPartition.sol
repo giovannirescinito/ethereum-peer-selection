@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-
+// SPDX-License-Identifier: MIT
 
 pragma solidity >=0.4.18;
 pragma experimental ABIEncoderV2;
@@ -11,11 +10,18 @@ import "contracts/Utils.sol";
 import "contracts/Zipper.sol";
 
 
+/// @title Exact Dollar Partition base implementation
+/// @author Giovanni Rescinito
+/// @notice implements the operations required to realize an impartial peer selection according to Exact Dollar Partition
 library ExactDollarPartition {
 
     //Events
     event Winners(Utils.Element[] winners);
     
+    /// @notice creates a partition of the users consisting in l clusters
+    /// @param proposals set containing the collected proposals
+    /// @param l number of clusters to generate
+    /// @return the zipped partition created, with a row for each cluster
     function createPartition(Proposals.Set storage proposals,  uint l) view external returns (uint[][] memory){
         uint n = Proposals.length(proposals);
         uint size = n/l;
@@ -37,6 +43,10 @@ library ExactDollarPartition {
         return partition;
     }
     
+    /// @notice generates the assignment according to the rules defined by Exact Dollar Partition
+    /// @param partition zipped matrix of the clusters in which proposals are divided
+    /// @param proposals set containing the collected proposals
+    /// @param m number of reviews to be assigned to each user
     function generateAssignments(uint[][] storage partition, Proposals.Set storage proposals, uint m) external {
         uint l = partition.length;
         uint n = Proposals.length(proposals);
@@ -81,6 +91,10 @@ library ExactDollarPartition {
         }
     }
     
+
+    /// @notice generates integer allocations starting from quotas
+    /// @param allocations dictionary used to store the possible allocations found
+    /// @param quotas list of real values representing the expected number of winners from each cluster
     function randomizedAllocationFromQuotas(Allocations.Map storage allocations, uint[] memory quotas) external{
         uint n = quotas.length;
         uint[] memory s = new uint[](n);
@@ -157,7 +171,11 @@ library ExactDollarPartition {
             Allocations.updateShares(allocations, i, s);  
         }
     }
-   
+
+    /// @notice selects an allocation from the dictionary given a random value
+    /// @param allocations dictionary containing the possible allocations found
+    /// @param p random value in the range [0,C]
+    /// @return the winners per cluster from the selected allocation
     function selectAllocation(Allocations.Map storage allocations, uint p) view external returns(uint[] memory){
         uint i = 0;
         uint n = Allocations.length(allocations);

@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-
+// SPDX-License-Identifier: MIT
 
 pragma solidity >=0.4.18;
 pragma experimental ABIEncoderV2;
@@ -11,6 +10,9 @@ import "contracts/Utils.sol";
 import "contracts/Zipper.sol";
 
 
+/// @title Exact Dollar Partition base implementation
+/// @author Giovanni Rescinito
+/// @notice implements the operations required to realize an impartial peer selection according to Exact Dollar Partition
 library ExactDollarPartition {
 
     //Events
@@ -18,6 +20,10 @@ library ExactDollarPartition {
     event AllocationSelected(uint[] allocation);
     event Winners(Utils.Element[] winners);
     
+    /// @notice creates a partition of the users consisting in l clusters
+    /// @param proposals set containing the collected proposals
+    /// @param l number of clusters to generate
+    /// @return the zipped partition created, with a row for each cluster
     function createPartition(Proposals.Set storage proposals,  uint l) view external returns (uint[][] memory){
         uint n = Proposals.length(proposals);
         uint size = n/l;
@@ -39,6 +45,10 @@ library ExactDollarPartition {
         return partition;
     }
     
+    /// @notice generates the assignment according to the rules defined by Exact Dollar Partition
+    /// @param partition zipped matrix of the clusters in which proposals are divided
+    /// @param proposals set containing the collected proposals
+    /// @param m number of reviews to be assigned to each user
     function generateAssignments(uint[][] storage partition, Proposals.Set storage proposals, uint m) external {
         uint l = partition.length;
         uint n = Proposals.length(proposals);
@@ -83,6 +93,10 @@ library ExactDollarPartition {
         }
     }
     
+
+    /// @notice generates integer allocations starting from quotas
+    /// @param allocations dictionary used to store the possible allocations found
+    /// @param quotas list of real values representing the expected number of winners from each cluster
     function randomizedAllocationFromQuotas(Allocations.Map storage allocations, uint[] memory quotas) private{
         uint n = quotas.length;
         uint[] memory s = new uint[](n);
@@ -159,7 +173,11 @@ library ExactDollarPartition {
             Allocations.updateShares(allocations, i, s);  
         }
     }
-   
+
+    /// @notice selects an allocation from the dictionary given a random value
+    /// @param allocations dictionary containing the possible allocations found
+    /// @param p random value in the range [0,C]
+    /// @return the winners per cluster from the selected allocation
     function selectAllocation(Allocations.Map storage allocations, uint p) view private returns(uint[] memory){
         uint i = 0;
         uint n = Allocations.length(allocations);
@@ -172,6 +190,11 @@ library ExactDollarPartition {
         return Allocations.getShares(a);
     }
 
+    /// @notice calculates quotas for each cluster starting from scores received by users
+    /// @param part matrix of the clusters in which proposals are divided
+    /// @param scoreAccumulated accumulators containing the cumulative score received by each user
+    /// @param k number of winners to select
+    /// @return quotas calculated
     function calculateQuotas(uint[][] memory part, mapping(uint=>uint) storage scoreAccumulated, uint k) view private returns (uint[] memory){
         uint l = part.length;
         uint n = 0;
@@ -189,6 +212,11 @@ library ExactDollarPartition {
         return quotas;
     }
    
+    /// @notice selects the winners from each cluster given the allocation selected
+    /// @param part matrix of the clusters in which proposals are divided
+    /// @param scoreAccumulated accumulators containing the cumulative score received by each user
+    /// @param allocation number of winners to select from each cluster
+    /// @return selection winners' id and score
     function selectWinners(uint[][] memory part, mapping(uint=>uint) storage scoreAccumulated, uint[] memory allocation) view private returns (Utils.Element[] memory){
         uint num = 0;
         for (uint i=0;i<allocation.length;i++){
@@ -204,6 +232,8 @@ library ExactDollarPartition {
             for (uint j=0; j<part[i].length; j++) {
                 scores[j] = scoreAccumulated[(part[i][j])];
             }
+            // For each cluster, sorts the scores received by its users and selects the ones having the highest score
+            // according to the allocation drawn
             scoresSorted = Utils.sort(scores);
             index = part[i].length - 1;
             for (uint q=0; q<allocation[i]; q++) {
@@ -214,6 +244,12 @@ library ExactDollarPartition {
         return winners;
     }
 
+    /// @notice executes the Exact Dollar Partition algorithm
+    /// @param partition zipped matrix of the clusters in which proposals are divided
+    /// @param scoreAccumulated accumulators containing the cumulative score received by each user
+    /// @param allocations dictionary containing the possible allocations found
+    /// @param allocationRandomness random value used to draw an allocation from the possible ones
+    /// @param k number of winners to select
     function exactDollarPartition(uint[][] storage partition, 
                                     mapping(uint=>uint) storage scoreAccumulated, 
                                     Allocations.Map storage allocations,

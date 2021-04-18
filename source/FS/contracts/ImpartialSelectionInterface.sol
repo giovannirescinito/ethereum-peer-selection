@@ -1,7 +1,11 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
+
 pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
+/// @title Interface for the impartial peer selection mechanism
+/// @author Giovanni Rescinito
+/// @notice defines the prototypes of the functions an impartial peer selection contract should implement
 interface ImpartialSelectionInterface{
     
     function isImpartialSelection() external view returns (bool);
@@ -37,5 +41,3 @@ interface ImpartialSelectionInterface{
     function selectAllocation(uint randomness) external;
     function selectWinners() external;
 }
-
-    

@@ -1,22 +1,32 @@
-// SPDX-License-Identifier: UNLICENSED
-
+// SPDX-License-Identifier: MIT
 
 pragma solidity >=0.4.18;
 pragma experimental ABIEncoderV2;
 
+/// @title Dictionary storing allocations
+/// @author Giovanni Rescinito
+/// @notice Data structure implemented as an iterable map, produced during the apportionment algorithm to store allocations
 library Allocations {
     //Data Structures
+
+    /// @notice Data structure related to a single allocation
     struct Allocation {
-        uint[] shares;
-        uint p;
+        uint[] shares;      // winners per cluster
+        uint p;             // probability of the allocation
     }
 
+    /// @notice Dictionary containing allocations
     struct Map {
-        Allocation[] elements;
-        mapping (bytes32 => uint) idx;
+        Allocation[] elements;          // list of allocations
+        mapping (bytes32 => uint) idx;  // maps key to index in the list
     }
 
     //Setters
+
+    /// @notice creates a new allocation or updates the probability of an existing one
+    /// @param map dictionary containing allocations
+    /// @param a winners per cluster to insert/modify
+    /// @param p probability of the specific allocation
     function setAllocation(Map storage map, uint[] calldata a, uint p) external {
         bytes32 h = keccak256(abi.encodePacked(a));
         uint index = map.idx[h];
@@ -28,16 +38,25 @@ library Allocations {
         }
     }
 
+    /// @notice updates the winners per cluster of an allocation specified by its index
+    /// @param map dictionary containing allocations
+    /// @param index index of the allocation to modify
+    /// @param shares winners per cluster to update
     function updateShares(Map storage map, uint index, uint[] calldata shares) external {
         require(index >= 0 && index < map.elements.length, "Map out of bounds"); 
         map.elements[index].shares = shares;
     }
 
     //Getters
+
+    /// @param map dictionary containing allocations
+    /// @return the number of allocations stored
     function length(Map storage map) view external returns (uint){
         return map.elements.length;
     }
 
+    /// @param map dictionary containing allocations
+    /// @return the list of allocations and the list of corresponding probabilities
     function getAllocations(Map storage map) view external returns (uint[][] memory, uint[] memory) {
         uint n = map.elements.length;
         uint[][] memory allocations = new uint[][](n);
@@ -49,14 +68,21 @@ library Allocations {
         return (allocations,p);
     }
 
+    /// @param a allocation for which the probability is required
+    /// @return the probability associated to the allocation
     function getP(Allocation calldata a) pure external returns (uint) {
         return a.p;
     }
 
+    /// @param a allocation for which the winners per cluster are required
+    /// @return the winners per cluster associated to the allocation
     function getShares(Allocation memory a) pure public returns (uint[] memory) {
         return a.shares;
     }
 
+    /// @param map dictionary containing allocations
+    /// @param index allocation for which the probability is required
+    /// @return the allocation stored at a specified index
     function getAllocationAt(Map storage map, uint index) view external returns (Allocation memory) {
         require(index >= 0 && index < map.elements.length, "Map out of bounds"); 
         return map.elements[index];

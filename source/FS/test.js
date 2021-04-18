@@ -23,7 +23,7 @@ var l, m, n, k, randomness, messages, commitments, assignments, evaluations, s, 
 var folder = "../../results/FS/"
 module.exports = async function (callback) {
     fs.mkdir(folder, { recursive: true },(err) =>{if (err) throw err;})
-    paper = true
+    paper = true        // if true executes the example provided on the Exact Dollar Partition paper
     await initialize();
     if (paper) {
         k = 5;
@@ -42,13 +42,13 @@ module.exports = async function (callback) {
         file = folder + "paper_nostorage.json"
         await main()
     } else {
-        ls = [3, 4, 5]
-        ns = [10, 15, 20, 30, 50, 75]
-        ks = [5, 15, 25]
-        ms = [3, 7, 11, 15]
-        scs = ['MAP', 'MATRIX','NOSTORAGE']
-        offchains = [true, false]
-        revPercs = [0.75, 1]
+        ls = [3, 4, 5]                      // number of clusters
+        ns = [10, 15, 20, 30, 50, 75]       // number of users
+        ks = [5, 15, 25]                    // number of winners
+        ms = [3, 7, 11, 15]                 // number of reviews
+        scs = ['MAP', 'MATRIX','NOSTORAGE'] // scores data structure
+        offchains = [true, false]           // partition and assignment off-chain
+        revPercs = [0.75, 1]                // percentage of correct reveals
         for (i0 = 0; i0 < ls.length; i0++) {
             l = ls[i0]
             for (i1 = 0; i1 < ns.length; i1++) {
@@ -96,16 +96,16 @@ function checkConditions() {
 
 async function main() {
     try {
-        await initializeVariables();
-        await createNewContract();
-        await submission()
-        await partition()
-        await assignment()
-        await evaluation()
-        await commit()
-        await reveal()
+        await initializeVariables();        // Testing environment initialization
+        await createNewContract();          // Contract deployment
+        await submission()                  // Submission Phase
+        await partition()                   // Assignment Phase
+        await assignment()                  // Assignments retrieval
+        await evaluation()                  // Proposals review
+        await commit()                      // Commitment Phase
+        await reveal()                      // Reveal Phase
         try {
-            await selection()
+            await selection()               // Selection Phase
             params['Selection Completed'] = true
         } catch (error) {
             console.error(error)

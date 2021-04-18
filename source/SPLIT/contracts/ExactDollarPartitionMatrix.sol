@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-
+// SPDX-License-Identifier: MIT
 
 pragma solidity >=0.4.18;
 pragma experimental ABIEncoderV2;
@@ -7,12 +6,21 @@ pragma experimental ABIEncoderV2;
 
 import "contracts/ExactDollarPartition.sol";
 
+/// @title Exact Dollar Partition matrix implementation
+/// @author Giovanni Rescinito
+/// @notice implements the matrix specific functions related to Exact Dollar Partition
 library ExactDollarPartitionMatrix {
 
+    /// @notice initializes the scores data structure
+    /// @param n numbers of proposals submitted
+    /// @return a nxn empty matrix to store scores
     function initializeScoreMatrix(uint n) pure external returns (uint[][] memory){
         return new uint[][](n);
     }
 
+    /// @notice checks if all users revealed their evaluations, otherwise sets them according to Exact Dollar Partition
+    /// @param scoreMatrix data structure containing the scores
+    /// @param partition zipped matrix of the clusters in which proposals are divided
     function finalizeScoreMatrix(uint[][] storage scoreMatrix, uint[][] storage partition) external{
         uint n = scoreMatrix.length;
         uint[][] memory part = Zipper.unzipMatrix(partition,8);
@@ -60,6 +68,11 @@ library ExactDollarPartitionMatrix {
         }
     }
     
+    /// @notice normalizes the scores received by a user when revealing and adds them to the corresponding data structure
+    /// @param scoreMatrix data structure containing the scores
+    /// @param index index of the agent who submitted the reviews
+    /// @param assignments list of the works reviewed
+    /// @param evaluations scores provided
     function addToScoreMatrix(uint[][] storage scoreMatrix, uint index, uint[] calldata assignments, uint[] memory evaluations) external{
         uint sum = 0;
         for (uint j=0;j<assignments.length;j++){
@@ -73,6 +86,11 @@ library ExactDollarPartitionMatrix {
         }
     }
 
+    /// @notice calculates quotas for each cluster starting from scores received by users
+    /// @param partition matrix of the clusters in which proposals are divided
+    /// @param scoreMatrix data structure containing the scores
+    /// @param k number of winners to select
+    /// @return quotas calculated
     function calculateQuotas(uint[][] storage partition, uint[][] storage scoreMatrix, uint k) view external returns (uint[] memory){
         uint[][] memory part = Zipper.unzipMatrix(partition,8);
         uint[][] memory scoreMat = Zipper.reconstructScoreMatrix(scoreMatrix);
@@ -95,6 +113,11 @@ library ExactDollarPartitionMatrix {
         return quotas;
     }
    
+    /// @notice selects the winners from each cluster given the allocation selected
+    /// @param partition matrix of the clusters in which proposals are divided
+    /// @param scoreMatrix data structure containing the scores
+    /// @param allocation number of winners to select from each cluster
+    /// @return selection winners' id and score
     function selectWinners(uint[][] storage partition, uint[][] storage scoreMatrix, uint[] memory allocation) view external returns (Utils.Element[] memory){
         uint[][] memory part = Zipper.unzipMatrix(partition,8);
         uint[][] memory scoreMat = Zipper.reconstructScoreMatrix(scoreMatrix);

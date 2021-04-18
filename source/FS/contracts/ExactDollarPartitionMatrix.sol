@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-
+// SPDX-License-Identifier: MIT
 
 pragma solidity >=0.4.18;
 pragma experimental ABIEncoderV2;
@@ -7,12 +6,22 @@ pragma experimental ABIEncoderV2;
 
 import "contracts/ExactDollarPartition.sol";
 
+/// @title Exact Dollar Partition matrix implementation
+/// @author Giovanni Rescinito
+/// @notice implements the matrix specific functions related to Exact Dollar Partition
 library ExactDollarPartitionMatrix {
 
+    /// @notice initializes the scores data structure
+    /// @param n numbers of proposals submitted
+    /// @return a nxn empty matrix to store scores
     function initializeScoreMatrix(uint n) pure external returns (uint[][] memory){
         return new uint[][](n);
     }
 
+    /// @notice checks if all users revealed their evaluations, otherwise sets them according to Exact Dollar Partition
+    /// @param scoreMatrix data structure containing the scores
+    /// @param partition zipped matrix of the clusters in which proposals are divided
+    /// @param scoreAccumulated accumulators containing the cumulative score received by each user
     function finalizeScoreMatrix(uint[][] storage scoreMatrix, uint[][] storage partition, mapping(uint=>uint) storage scoreAccumulated) external{
         uint n = scoreMatrix.length;
         uint[][] memory part = Zipper.unzipMatrix(partition,16);
@@ -73,6 +82,12 @@ library ExactDollarPartitionMatrix {
         }
     }
     
+    /// @notice normalizes the scores received by a user when revealing and adds them to the corresponding data structure
+    /// @param scoreMatrix data structure containing the scores
+    /// @param scoreAccumulated accumulators containing the cumulative score received by each user
+    /// @param index index of the agent who submitted the reviews
+    /// @param assignments list of the works reviewed
+    /// @param evaluations scores provided
     function addToScoreMatrix(uint[][] storage scoreMatrix, mapping(uint=>uint) storage scoreAccumulated, uint index, uint[] calldata assignments, uint[] memory evaluations) external{
         uint sum = 0;
         uint c = Utils.C;
